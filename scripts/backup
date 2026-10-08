@@ -1,0 +1,7 @@
+#!/bin/bash
+
+source /usr/share/yunohost/helpers
+
+ynh_backup "$data_dir"
+ynh_backup "/etc/nginx/conf.d/$domain.d/$app.conf"
+ynh_backup "/etc/systemd/system/$app.service"

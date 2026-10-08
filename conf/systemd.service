@@ -1,0 +1,21 @@
+[Unit]
+Description=Permit Alert web service
+After=network.target
+
+[Service]
+Type=simple
+User=__APP__
+Group=__APP__
+WorkingDirectory=__INSTALL_DIR__
+Environment=PERMIT_ALERT_DATABASE=__DATA_DIR__/permit-alert.sqlite3
+Environment=PERMIT_ALERT_LISTEN=127.0.0.1:__PORT__
+ExecStart=__INSTALL_DIR__/bin/permit-alert
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=__DATA_DIR__
+
+[Install]
+WantedBy=multi-user.target

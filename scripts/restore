@@ -1,0 +1,6 @@
+#!/bin/bash
+
+source /usr/share/yunohost/helpers
+
+ynh_restore_everything
+ynh_systemctl --action=restart

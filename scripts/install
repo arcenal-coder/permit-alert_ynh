@@ -1,0 +1,13 @@
+#!/bin/bash
+
+source /usr/share/yunohost/helpers
+
+package_dir="$(dirname "$(dirname "$(readlink -f "$0")")")"
+
+ynh_script_progression "Installing Permit Alert binary..."
+install -D -m 0755 "$package_dir/bin/permit-alert" "$install_dir/bin/permit-alert"
+
+ynh_script_progression "Configuring web access and service..."
+ynh_config_add_nginx
+ynh_config_add_systemd
+ynh_systemctl --action=restart

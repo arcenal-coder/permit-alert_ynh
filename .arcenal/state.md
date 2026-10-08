@@ -18,6 +18,15 @@ Statut : ACTUEL
 - .arcenal/state.md
 - architecture.md
 - plan-de-realisation.md
+- app/Cargo.toml
+- app/Cargo.lock
+- app/src/main.rs
+- config/permit-alert.service
+- manifest.toml
+- conf/
+- scripts/
+- .github/workflows/release.yml
+- README.md
 
 ## Tests exécutés
 
@@ -26,11 +35,14 @@ Statut : ACTUEL
 
 ## Résultats
 
-- Cahier des charges, architecture et plan V1 valides ; aucun code metier cree.
+- Le socle Rust initialise SQLite et expose une page d'accueil et une sonde de
+  sante. Le paquet YunoHost v2 prepare un service, un proxy, une permission et
+  la sauvegarde des donnees. Les imports et alertes ne sont pas implementes.
 
 ## Blocages
 
 - Instance YunoHost de test requise pour valider le Lot 1.
+- Instance YunoHost amd64 de test requise pour valider le Lot 1.
 
 ## Décisions récentes
 

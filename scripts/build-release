@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -euo pipefail
+
+root_dir="$(dirname "$(dirname "$(readlink -f "$0")")")"
+version="$(awk -F '"' '/^version =/ { print $2 }' "$root_dir/manifest.toml")"
+architecture="$(dpkg --print-architecture)"
+release_dir="$root_dir/dist/permit-alert-$version-$architecture"
+
+if [ "$(uname -s)" != "Linux" ] || [ "$architecture" != "amd64" ]; then
+    printf '%s\n' "This initial package supports amd64 only." >&2
+    exit 1
+fi
+
+rm -rf "$release_dir"
+mkdir -p "$release_dir/bin"
+cargo build --release --manifest-path "$root_dir/app/Cargo.toml"
+cp "$root_dir/app/target/release/permit-alert" "$release_dir/bin/permit-alert"
+cp "$root_dir/manifest.toml" "$release_dir/"
+cp -R "$root_dir/conf" "$root_dir/scripts" "$release_dir/"
+tar -C "$root_dir/dist" -czf "$root_dir/dist/permit-alert-$version-$architecture.tar.gz" "$(basename "$release_dir")"
