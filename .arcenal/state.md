@@ -30,8 +30,11 @@ Statut : ACTUEL
 
 ## Tests exécutés
 
-- NON TESTÉ : aucun changement métier effectué.
 - Controle documentaire : `arcenal-project-state validate` reussi.
+- `cargo fmt --check` reussi.
+- `cargo clippy -- -D warnings` reussi.
+- `cargo test` reussi : 1 test.
+- Syntaxe Bash des scripts YunoHost verifiee avec `bash -n`.
 
 ## Résultats
 
