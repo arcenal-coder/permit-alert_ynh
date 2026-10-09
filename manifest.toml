@@ -3,7 +3,7 @@ id = "permit-alert"
 name = "Permit Alert"
 description.en = "Track E-Permit expiry dates."
 description.fr = "Suivi des echeances de permis E-Permit."
-version = "0.1.0~ynh2"
+version = "0.1.0~ynh3"
 maintainers = ["arcenal-coder"]
 
 [integration]
@@ -27,7 +27,7 @@ ram.runtime = "30M"
 
     [install.init_main_permission]
     type = "group"
-    default = "coordinateur"
+    default = "admins"
 
 [resources]
     [resources.sources.main]
