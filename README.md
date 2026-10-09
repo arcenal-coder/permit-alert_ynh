@@ -4,13 +4,10 @@ Application YunoHost de suivi des echeances de permis E-Permit.
 
 ## Installation
 
-1. Telecharger l'archive `permit-alert-<version>-amd64.tar.gz` depuis une
-   release GitHub avec un compte autorise.
-2. Copier l'archive sur le serveur YunoHost.
-3. Installer le paquet :
+Installer le paquet depuis le catalogue d'applications personnalisees avec :
 
 ```bash
-sudo yunohost app install /chemin/vers/permit-alert-<version>-amd64.tar.gz
+sudo yunohost app install https://github.com/arcenal-coder/permit-alert_ynh
 ```
 
 Le groupe LDAP `coordinateur` doit exister avant l'installation. Le paquet V1

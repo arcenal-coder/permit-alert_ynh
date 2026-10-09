@@ -2,9 +2,7 @@
 
 source /usr/share/yunohost/helpers
 
-package_dir="$(dirname "$(dirname "$(readlink -f "$0")")")"
-
-install -D -m 0755 "$package_dir/bin/permit-alert" "$install_dir/bin/permit-alert"
+ynh_setup_source --dest_dir="$install_dir"
 ynh_config_add_nginx
 ynh_config_add_systemd
 ynh_systemctl --action=restart
