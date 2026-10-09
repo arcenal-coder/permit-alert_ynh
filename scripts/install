@@ -8,5 +8,4 @@ ynh_setup_source --dest_dir="$install_dir"
 ynh_script_progression "Configuring web access and service..."
 ynh_config_add_nginx
 ynh_config_add_systemd
-ynh_permission_update --permission=main --add=coordinateur --remove=admins
 ynh_systemctl --action=restart

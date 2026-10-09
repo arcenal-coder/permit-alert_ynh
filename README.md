@@ -10,9 +10,9 @@ Installer le paquet depuis le catalogue d'applications personnalisees avec :
 sudo yunohost app install https://github.com/arcenal-coder/permit-alert_ynh
 ```
 
-Le groupe LDAP `coordinateur` doit exister avant l'installation. Le paquet V1
-initial ne prend en charge que les serveurs YunoHost `amd64` et YunoHost 12.1
-ou superieur.
+Choisissez le groupe LDAP voulu dans le formulaire YunoHost. Sur le serveur
+Onyx actuel, ce groupe est `coordinateurs`. Le paquet V1 initial ne prend en
+charge que les serveurs YunoHost `amd64` et YunoHost 12.1 ou superieur.
 
 ## Creer une release
 

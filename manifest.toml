@@ -3,7 +3,7 @@ id = "permit-alert"
 name = "Permit Alert"
 description.en = "Track E-Permit expiry dates."
 description.fr = "Suivi des echeances de permis E-Permit."
-version = "0.1.0~ynh3"
+version = "0.1.0~ynh4"
 maintainers = ["arcenal-coder"]
 
 [integration]
