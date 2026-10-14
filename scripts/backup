@@ -2,6 +2,10 @@
 
 source /usr/share/yunohost/helpers
 
-ynh_backup "$data_dir"
+ynh_backup "$install_dir"
+# Make a consistent snapshot even while the service is running. Only the
+# database is copied: future temporary PDFs must never enter an archive.
+mkdir -p ".${data_dir}"
+python3 ../settings/scripts/backup-sqlite.py "$data_dir/permit-alert.sqlite3" ".${data_dir}/permit-alert.sqlite3"
 ynh_backup "/etc/nginx/conf.d/$domain.d/$app.conf"
 ynh_backup "/etc/systemd/system/$app.service"

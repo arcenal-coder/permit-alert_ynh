@@ -14,7 +14,7 @@ fi
 
 rm -rf "$release_dir"
 mkdir -p "$release_dir/bin"
-cargo build --release --manifest-path "$root_dir/app/Cargo.toml"
+cargo build --locked --release --manifest-path "$root_dir/app/Cargo.toml"
 cp "$root_dir/app/target/release/permit-alert" "$release_dir/bin/permit-alert"
 cp "$root_dir/manifest.toml" "$release_dir/"
 cp -R "$root_dir/conf" "$root_dir/scripts" "$release_dir/"

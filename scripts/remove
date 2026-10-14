@@ -4,4 +4,5 @@ source /usr/share/yunohost/helpers
 
 ynh_systemctl --action=stop
 ynh_config_remove_systemd
+yunohost service remove "$app"
 ynh_config_remove_nginx

@@ -3,8 +3,11 @@ id = "permit-alert"
 name = "Permit Alert"
 description.en = "Track E-Permit expiry dates."
 description.fr = "Suivi des echeances de permis E-Permit."
-version = "0.1.0~ynh4"
+version = "0.1.1~ynh1"
 maintainers = ["arcenal-coder"]
+
+[upstream]
+code = "https://github.com/arcenal-coder/permit-alert_ynh"
 
 [integration]
 yunohost = ">= 12.1"

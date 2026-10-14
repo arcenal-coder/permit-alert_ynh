@@ -4,7 +4,7 @@ Statut : ACTUEL
 
 ## Lot actif
 
-- Aucun lot validé.
+- Lot 1 — Socle YunoHost : corrections en cours ; recette serveur non effectuée.
 
 ## Dernière étape validée
 
@@ -21,12 +21,15 @@ Statut : ACTUEL
 - app/Cargo.toml
 - app/Cargo.lock
 - app/src/main.rs
-- config/permit-alert.service
+- conf/systemd.service
 - manifest.toml
 - conf/
 - scripts/
 - .github/workflows/release.yml
 - README.md
+- TEST_REPORT.md
+- tests/test_package.py
+- scripts/backup-sqlite.py
 
 ## Tests exécutés
 
@@ -35,6 +38,7 @@ Statut : ACTUEL
 - `cargo clippy -- -D warnings` reussi.
 - `cargo test` reussi : 1 test.
 - Syntaxe Bash des scripts YunoHost verifiee avec `bash -n`.
+- Regression du manifeste et sauvegarde SQLite WAL : 2 tests Python reussis.
 
 ## Résultats
 
@@ -44,8 +48,8 @@ Statut : ACTUEL
 
 ## Blocages
 
-- Instance YunoHost de test requise pour valider le Lot 1.
-- Instance YunoHost amd64 de test requise pour valider le Lot 1.
+- Aucun acces serveur YunoHost disponible ; installation et recette non verifiees.
+- Fonctions PDF, reception e-mail et alertes non implementees.
 
 ## Décisions récentes
 
@@ -53,4 +57,4 @@ Statut : ACTUEL
 
 ## Prochaine action
 
-- Autoriser le Lot 1 - Socle YunoHost avant tout developpement.
+- Publier la candidate 0.1.1, puis verifier le formulaire et le cycle de vie sur YunoHost.

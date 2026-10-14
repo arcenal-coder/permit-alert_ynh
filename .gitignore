@@ -1,3 +1,4 @@
 /app/target/
 /bin/
 /dist/
+__pycache__/

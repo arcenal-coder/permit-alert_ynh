@@ -10,14 +10,31 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    # Debian 12 (YunoHost 12) has glibc 2.36. Build against glibc 2.35,
+    # rather than a newer ubuntu-latest runtime that Debian cannot load.
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
       - run: cargo fmt --check --manifest-path app/Cargo.toml
       - run: cargo clippy --manifest-path app/Cargo.toml -- -D warnings
       - run: cargo test --manifest-path app/Cargo.toml
+      - run: python3 tests/test_package.py
       - run: scripts/build-release
+      - name: Test binary on Debian 12
+        run: |
+          docker run --detach --name permit-alert-smoke \
+            --publish 127.0.0.1:33000:3000 \
+            --volume "$PWD/app/target/release/permit-alert:/app:ro" \
+            --env PERMIT_ALERT_DATABASE=/tmp/permit-alert.sqlite3 \
+            --env PERMIT_ALERT_LISTEN=0.0.0.0:3000 \
+            debian:bookworm-slim /app
+          trap 'docker logs permit-alert-smoke; docker rm --force permit-alert-smoke' EXIT
+          curl --fail --retry 10 --retry-connrefused --retry-delay 1 http://127.0.0.1:33000/health
+          curl --fail http://127.0.0.1:33000/
       - run: gh release create "$GITHUB_REF_NAME" dist/*.tar.gz --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
