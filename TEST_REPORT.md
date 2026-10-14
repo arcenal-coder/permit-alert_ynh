@@ -10,6 +10,10 @@
   données validées : même suite Python (2 tests au total).
 - Syntaxe des scripts de cycle de vie : `bash -n`.
 - Espaces et conflits de patch : `git diff --check`.
+- CI publique : https://github.com/arcenal-coder/permit-alert_ynh/actions/runs/38616888406
+  (réussie).
+- Nouveau binaire Linux : démarrage dans `debian:bookworm-slim`, création de
+  SQLite, réponse de `/health` et de `/` vérifiées par la CI.
 
 ## Cause du formulaire figé
 
@@ -24,7 +28,6 @@ existante. Aucune suppression de l'application n'est justifiée par ces données
 
 ## NON_EXÉCUTÉ — à ce stade
 
-- Exécution du nouveau binaire Linux dans Debian 12 (prévue par le workflow).
 - Installation, retrait, réinstallation et mise à jour dans YunoHost.
 - Sauvegarde/restauration complète du paquet par YunoHost.
 - Contrôle des accès coordinateurs et utilisateurs hors groupe sur le serveur.

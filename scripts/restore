@@ -4,6 +4,7 @@ source /usr/share/yunohost/helpers
 
 ynh_restore_everything
 ynh_restore "$data_dir/permit-alert.sqlite3"
+chmod 0755 "$install_dir/bin/permit-alert"
 ynh_config_add_systemd
 yunohost service add "$app" --description="Permit Alert"
 ynh_systemctl --action=restart

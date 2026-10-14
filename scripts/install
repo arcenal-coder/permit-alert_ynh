@@ -4,6 +4,7 @@ source /usr/share/yunohost/helpers
 
 ynh_script_progression "Installing Permit Alert binary..."
 ynh_setup_source --dest_dir="$install_dir"
+chmod 0755 "$install_dir/bin/permit-alert"
 
 ynh_script_progression "Configuring web access and service..."
 ynh_config_add_nginx

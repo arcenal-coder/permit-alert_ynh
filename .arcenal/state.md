@@ -39,6 +39,7 @@ Statut : ACTUEL
 - `cargo test` reussi : 1 test.
 - Syntaxe Bash des scripts YunoHost verifiee avec `bash -n`.
 - Regression du manifeste et sauvegarde SQLite WAL : 2 tests Python reussis.
+- CI v0.1.1 reussie : binaire et routes HTTP verifies dans Debian 12.
 
 ## Résultats
 
@@ -57,4 +58,4 @@ Statut : ACTUEL
 
 ## Prochaine action
 
-- Publier la candidate 0.1.1, puis verifier le formulaire et le cycle de vie sur YunoHost.
+- Verifier le formulaire et le cycle de vie sur YunoHost avec le paquet 0.1.1~ynh2.

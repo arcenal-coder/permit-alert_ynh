@@ -4,6 +4,7 @@ source /usr/share/yunohost/helpers
 
 ynh_systemctl --action=stop
 ynh_setup_source --dest_dir="$install_dir"
+chmod 0755 "$install_dir/bin/permit-alert"
 ynh_config_add_nginx
 ynh_config_add_systemd
 yunohost service add "$app" --description="Permit Alert"
