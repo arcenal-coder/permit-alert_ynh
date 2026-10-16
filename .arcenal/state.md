@@ -26,6 +26,7 @@ Statut : ACTUEL
 - Snapshot SQLite WAL sans brouillons ni PDF.
 - Rejets e-mail et vérifications DKIM cryptographiques avec DNS simulé.
 - CI v0.2.1 réussie : 20 tests, compilation Linux et démarrage dans Debian 12.
+- Paquet final v0.2.1-ynh2 publié, CI également réussie ; branche master des deux dépôts synchronisée.
 - Voir TEST_REPORT.md pour les preuves et la recette non exécutée.
 
 ## Résultats

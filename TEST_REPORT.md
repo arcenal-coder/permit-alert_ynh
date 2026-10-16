@@ -34,6 +34,10 @@ le démarrage de cette ancienne version, pas la recette de la version 0.2.
   2 tests de paquet et 1 parcours HTTP bout en bout : 20 tests réussis.
 - Compilation du binaire Linux et démarrage/réponses HTTP dans Debian 12.
 - Archive publiée : release `v0.2.1`, référencée par le paquet `0.2.1~ynh2`.
+- Paquet final téléchargeable : release `v0.2.1-ynh2`, avec le même ensemble
+  de tests réussi : https://github.com/arcenal-coder/permit-alert_ynh/actions/runs/38862477221
+- Empreinte de l'archive binaire `v0.2.1` téléchargée et contrôlée localement :
+  `936a1f3750852ee77a834ee8f606f75c0ac3ac885f7bdbce13c6505f8f7f498e`.
 
 ## NON_EXÉCUTÉ — recette serveur
 
