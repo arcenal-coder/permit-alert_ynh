@@ -3,3 +3,7 @@
 source /usr/share/yunohost/helpers
 
 ynh_config_change_url_nginx
+domain="$new_domain"
+path="$new_path"
+ynh_config_add_systemd
+ynh_systemctl --action=restart

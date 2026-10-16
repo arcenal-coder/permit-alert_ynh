@@ -4,58 +4,46 @@ Statut : ACTUEL
 
 ## Lot actif
 
-- Lot 1 — Socle YunoHost : corrections en cours ; recette serveur non effectuée.
+- Candidate applicative 0.2.0 : fonctions métier développées ; recette client à effectuer.
 
 ## Dernière étape validée
 
-- Architecture V1 valide.
+- Socle 0.1.x affiché sur YunoHost (capture client).
+- Carte blanche client pour développer la première version opérationnelle.
 
 ## Fichiers importants modifiés
 
-- cahier-des-charges.md
-- .arcenal/project.md
-- .arcenal/decisions.md
-- .arcenal/state.md
-- architecture.md
-- plan-de-realisation.md
-- app/Cargo.toml
-- app/Cargo.lock
-- app/src/main.rs
-- conf/systemd.service
-- manifest.toml
-- conf/
-- scripts/
-- .github/workflows/release.yml
-- README.md
-- TEST_REPORT.md
-- tests/test_package.py
-- scripts/backup-sqlite.py
+- app/src/{main,model,db,pdf,web,mail,tests}.rs et style.css
+- app/Cargo.toml et Cargo.lock
+- manifest.toml, conf/, scripts/, .github/workflows/release.yml
+- tests/test_{http,mailbox,package}.py
+- doc/, README.md, WORKFLOWS.md et TEST_REPORT.md
 
 ## Tests exécutés
 
-- Controle documentaire : `arcenal-project-state validate` reussi.
-- `cargo fmt --check` reussi.
-- `cargo clippy -- -D warnings` reussi.
-- `cargo test` reussi : 1 test.
-- Syntaxe Bash des scripts YunoHost verifiee avec `bash -n`.
-- Regression du manifeste et sauvegarde SQLite WAL : 2 tests Python reussis.
-- CI v0.1.1 reussie : binaire et routes HTTP verifies dans Debian 12.
+- Tests Rust avec Poppler, Clippy strict et formatage.
+- Parcours HTTP réel : import, correction, validation, redémarrage, annulation.
+- Snapshot SQLite WAL sans brouillons ni PDF.
+- Rejets e-mail et vérifications DKIM cryptographiques avec DNS simulé.
+- Voir TEST_REPORT.md pour les preuves et la recette non exécutée.
 
 ## Résultats
 
-- Le socle Rust initialise SQLite et expose une page d'accueil et une sonde de
-  sante. Le paquet YunoHost v2 prepare un service, un proxy, une permission et
-  la sauvegarde des donnees. Les imports et alertes ne sont pas implementes.
+- Interface métier, filtres, imports avec validation transactionnelle et
+  comparaison des doublons, suppression définitive, réglages, confirmations,
+  rappels et journal paginé implémentés.
+- Relève e-mail optionnelle : nécessite les identifiants IMAP du serveur.
+- Les données 0.1.x sont migrées, les PDF ne sont jamais sauvegardés.
 
 ## Blocages
 
-- Aucun acces serveur YunoHost disponible ; installation et recette non verifiees.
-- Fonctions PDF, reception e-mail et alertes non implementees.
+- Aucun PDF E-Permit réel fourni ; parseur testé sur documents synthétiques.
+- Accès serveur indisponible : LDAP, IMAP, SMTP et permissions à vérifier en recette.
 
 ## Décisions récentes
 
-- Voir .arcenal/decisions.md.
+- Voir .arcenal/decisions.md : groupes, cache, DKIM, confirmations et planification.
 
 ## Prochaine action
 
-- Verifier le formulaire et le cycle de vie sur YunoHost avec le paquet 0.1.1~ynh2.
+- Produire la release 0.2.0, puis mettre à jour l'installation client et réaliser la recette documentée.

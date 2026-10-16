@@ -11,10 +11,12 @@ Statut : VALIDE
 
 ## Integrations
 
-- Permission YunoHost attribuee au groupe LDAP `coordinateur`.
+- Permission YunoHost attribuee au groupe LDAP choisi (`coordinateurs` sur Onyx).
 - Boite d'import : `epermit@onyx-ingenierie.com`.
 - Messagerie YunoHost pour les alertes et confirmations.
-- Tache planifiee pour alertes et expiration automatique.
+- Boucle Tokio chaque minute pour alertes, expiration et releve, sans cron concurrent.
+- Poppler pour l'extraction ; cache prive sous /var/cache/permit-alert hors sauvegardes.
+- IMAP TLS/UIDPLUS via helper Python ; LDAP local et verification DKIM alignee.
 
 ## Cycle de vie
 
@@ -22,8 +24,8 @@ Statut : VALIDE
 - La restauration restitue permis, reglages, destinataires et journaux.
 - Le service, les donnees et les permissions suivent les helpers YunoHost v2.
 
-## Points a definir pendant implementation
+## Points restant a verifier en recette
 
-- Releve securisee de la boite dediee.
-- Limites de taille et controles de contenu des PDF.
-- Dependances Debian d'extraction E-Permit.
+- Parametres effectifs de la boite dediee et delivrabilite.
+- Compatibilite d'un PDF E-Permit client avec le parseur.
+- Cycle de vie complet du paquet et permissions sur le serveur.

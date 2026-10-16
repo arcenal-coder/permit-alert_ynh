@@ -35,6 +35,8 @@ class PackageRegressionTests(unittest.TestCase):
                 live.execute("PRAGMA journal_mode=WAL")
                 live.execute("CREATE TABLE settings (key TEXT, value TEXT)")
                 live.execute("INSERT INTO settings VALUES ('delay', '7')")
+                live.execute("CREATE TABLE drafts (id TEXT, pdf_path TEXT)")
+                live.execute("INSERT INTO drafts VALUES ('pending', '/run/private/source.pdf')")
                 live.commit()
                 module.snapshot(source, destination)
                 with sqlite3.connect(destination) as restored:
@@ -42,6 +44,8 @@ class PackageRegressionTests(unittest.TestCase):
                         restored.execute("SELECT * FROM settings").fetchall(),
                         [("delay", "7")],
                     )
+                    self.assertEqual(restored.execute("SELECT COUNT(*) FROM drafts").fetchone(), (0,))
+                self.assertEqual(live.execute("SELECT COUNT(*) FROM drafts").fetchone(), (1,))
 
 
 if __name__ == "__main__":

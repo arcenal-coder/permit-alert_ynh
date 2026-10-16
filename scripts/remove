@@ -6,3 +6,6 @@ ynh_systemctl --action=stop
 ynh_config_remove_systemd
 yunohost service remove "$app"
 ynh_config_remove_nginx
+if [ -d "/var/cache/$app" ]; then
+    ynh_safe_rm "/var/cache/$app"
+fi

@@ -103,3 +103,12 @@ explicite avant toute destruction de donnees.
 - Mecanisme YunoHost exact de releve de la boite dediee.
 - Limites de taille PDF et controles de contenu.
 - Dependances Debian necessaires a l'extraction textuelle E-Permit.
+
+## Implementation de la candidate 0.2
+
+Ces points sont precisés dans `.arcenal/decisions.md` et `doc/ADMIN.md` :
+Poppler local (10 Mo / 50 pages / 200 permis), cache PDF prive hors sauvegarde
+avec expiration apres 24 h, releve IMAP TLS/UIDPLUS et verification LDAP/DKIM.
+La planification est une boucle Tokio dans le service unique, sans cron externe
+concurrent. Toutes les adresses confirment leur inscription avant notification.
+Le groupe serveur constate est `coordinateurs`, selectionne via YunoHost.

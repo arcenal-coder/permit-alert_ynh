@@ -1,46 +1,53 @@
-# Rapport de validation — candidate 0.1.1
+# Rapport de validation — candidate applicative 0.2.0
 
 ## RÉUSSI — contrôles locaux
 
-- Formatage Rust : `cargo fmt --check`.
-- Analyse Rust : `cargo clippy -- -D warnings`.
-- Création des tables SQLite : `cargo test` (1 test).
-- Métadonnées indispensables au formulaire YunoHost : `python3 tests/test_package.py`.
-- Sauvegarde cohérente d'une base SQLite ouverte en mode WAL et relecture des
-  données validées : même suite Python (2 tests au total).
-- Syntaxe des scripts de cycle de vie : `bash -n`.
-- Espaces et conflits de patch : `git diff --check`.
-- CI publique : https://github.com/arcenal-coder/permit-alert_ynh/actions/runs/38616888406
-  (réussie).
-- Nouveau binaire Linux : démarrage dans `debian:bookworm-slim`, création de
-  SQLite, réponse de `/health` et de `/` vérifiées par la CI.
+- Formatage Rust et Clippy avec avertissements traités comme erreurs.
+- Tests Rust incluant l'extraction d'un vrai PDF synthétique avec Poppler :
+  parsing, champs supplémentaires, dates, rejets, migration 0.1.x, parcours
+  HTTP interne, validation explicite, remplacement par numéro, concurrence,
+  suppression, confirmations et rejeu, CSRF, rappel/déduplication/expiration,
+  échec d'envoi, expiration du cache et journal paginé.
+- `tests/test_http.py` : processus serveur réel, upload multipart d'un PDF,
+  correction et validation, persistance des permis et imports en attente après
+  redémarrage, relecture du PDF, annulation, suppression des sources.
+- `tests/test_mailbox.py` : refus hors groupe, refus d'en-têtes d'authentification
+  forgés, pièces jointes ambiguës et échappement LDAP. Vérification cryptographique
+  réelle avec une clé RSA générée à l'exécution et DNS simulé : signature valide,
+  message modifié, domaine non aligné et signature partielle.
+- `tests/test_package.py` : contrat du manifeste et snapshot SQLite WAL ; les
+  réglages sont restitués, les brouillons sont exclus, la base source reste intacte.
+- Syntaxe Bash des scripts de cycle de vie et `git diff --check`.
 
-## Cause du formulaire figé
+Les e-mails des tests Rust sont capturés par un faux sendmail, sans envoi externe.
+Les tests DKIM ne dépendent pas du DNS de production.
 
-La réponse API fournie par le client ne contient pas `upstream`. Le composant
-officiel `AppInstall.vue` accède à `manifest.upstream.demo` et
-`manifest.upstream.license` sans tester l'existence de l'objet. La section a été
-ajoutée au manifeste. Le formulaire sur le serveur client reste à vérifier.
+## RÉUSSI — preuve client antérieure
 
-Les exigences API ont toutes `passed: true`, notamment `install` : le message
-générique « already installed » ne permet pas de conclure à une installation
-existante. Aucune suppression de l'application n'est justifiée par ces données.
+La capture client montre le socle 0.1.x accessible sur YunoHost. Cela prouve
+le démarrage de cette ancienne version, pas la recette de la version 0.2.
 
-## NON_EXÉCUTÉ — à ce stade
+## NON_EXÉCUTÉ — recette serveur
 
-- Installation, retrait, réinstallation et mise à jour dans YunoHost.
-- Sauvegarde/restauration complète du paquet par YunoHost.
-- Contrôle des accès coordinateurs et utilisateurs hors groupe sur le serveur.
-- Rechargement du formulaire et accès HTTP réel derrière Nginx/SSOwat.
-- Recette métier PDF/e-mails/alertes : ces fonctions ne sont pas implémentées.
+- Mise à jour réelle 0.1.x → 0.2, retrait/réinstallation et restauration complète
+  du paquet sur YunoHost ; l'environnement local est macOS sans serveur YunoHost.
+- Autorisations SSOwat pour coordinateur, compte hors groupe et visiteur ;
+  confidentialité du lien public de confirmation.
+- Extraction d'un PDF E-Permit réel du client (aucun échantillon fourni).
+- Livraison réelle d'une notification, délivrabilité externe et relève de
+  `epermit@onyx-ingenierie.com` avec LDAP/DNS/IMAP de production.
+- Vérification visuelle dans un navigateur réel ; le HTML et les formulaires
+  ont été vérifiés par tests HTTP, sans outil navigateur dans cette session.
 
-## Statut de livraison
+## Statut
 
-Candidate technique du socle uniquement. La compilation et les tests locaux ne
-constituent pas une validation de production de la V1 métier.
+Première version métier candidate, vérifiée localement. La recette client sur
+les documents et services réels reste à réaliser. Ne pas confondre publication
+d'une release, mise à jour du serveur et réception fonctionnelle.
 
 ## Retour arrière
 
-Avant une mise à jour sur un serveur, créer une sauvegarde YunoHost. En cas
-d'échec, restaurer cette sauvegarde via YunoHost. Ne pas purger les données pour
-résoudre un formulaire qui ne se charge pas.
+Créer une sauvegarde YunoHost avant mise à jour. Restaurer cette sauvegarde
+en cas d'échec. Ne pas supprimer l'application pour tenter une mise à jour.
+Les PDF en attente ne sont pas sauvegardés : les valider avant sauvegarde ou
+prévoir de les réimporter après restauration.

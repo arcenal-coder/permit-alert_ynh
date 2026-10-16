@@ -3,7 +3,16 @@
 source /usr/share/yunohost/helpers
 
 ynh_systemctl --action=stop
-ynh_setup_source --dest_dir="$install_dir"
+if [ -f "$YNH_APP_BASEDIR/bin/VERSION" ]; then
+    install -D -m 0755 "$YNH_APP_BASEDIR/bin/permit-alert" "$install_dir/bin/permit-alert"
+    install -D -m 0644 "$YNH_APP_BASEDIR/bin/VERSION" "$install_dir/bin/VERSION"
+    install -D -m 0644 "$YNH_APP_BASEDIR/scripts/mailbox.py" "$install_dir/scripts/mailbox.py"
+else
+    ynh_setup_source --dest_dir="$install_dir" --keep="mail.env"
+fi
+if [ ! -f "$install_dir/bin/VERSION" ] || [ "$(cat "$install_dir/bin/VERSION")" != "$(ynh_app_upstream_version)" ]; then
+    ynh_die "The source archive does not match this application version."
+fi
 chmod 0755 "$install_dir/bin/permit-alert"
 ynh_config_add_nginx
 ynh_config_add_systemd

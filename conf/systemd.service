@@ -9,11 +9,22 @@ Group=__APP__
 WorkingDirectory=__INSTALL_DIR__
 Environment=PERMIT_ALERT_DATABASE=__DATA_DIR__/permit-alert.sqlite3
 Environment=PERMIT_ALERT_LISTEN=127.0.0.1:__PORT__
+Environment=PERMIT_ALERT_PUBLIC_URL=https://__DOMAIN____PATH__
+Environment=PERMIT_ALERT_BASE_PATH=__PATH__
+Environment=PERMIT_ALERT_SENDER=permit-alert@__DOMAIN__
+Environment=PERMIT_ALERT_TEMP=/var/cache/__APP__
+Environment=PERMIT_ALERT_MAILBOX_SCRIPT=__INSTALL_DIR__/scripts/mailbox.py
+EnvironmentFile=-__INSTALL_DIR__/mail.env
 ExecStart=__INSTALL_DIR__/bin/permit-alert
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true
 PrivateTmp=true
+RuntimeDirectory=__APP__
+RuntimeDirectoryMode=0700
+CacheDirectory=__APP__
+CacheDirectoryMode=0700
+UMask=0077
 ProtectSystem=strict
 ReadWritePaths=__DATA_DIR__
 

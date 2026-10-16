@@ -3,7 +3,7 @@ id = "permit-alert"
 name = "Permit Alert"
 description.en = "Track E-Permit expiry dates."
 description.fr = "Suivi des echeances de permis E-Permit."
-version = "0.1.1~ynh2"
+version = "0.2.0~ynh1"
 maintainers = ["arcenal-coder"]
 
 [upstream]
@@ -16,9 +16,9 @@ architectures = ["amd64"]
 multi_instance = false
 ldap = "not_relevant"
 sso = "not_relevant"
-disk = "20M"
+disk = "200M"
 ram.build = "0M"
-ram.runtime = "30M"
+ram.runtime = "128M"
 
 [install]
     [install.domain]
@@ -38,6 +38,7 @@ ram.runtime = "30M"
     sha256 = "1bbdb75ff229a85a9e862eb2e146e8d3a14050f1d075dfa707aaf69779096c8f"
 
     [resources.system_user]
+    allow_email = true
 
     [resources.install_dir]
 
@@ -48,3 +49,12 @@ ram.runtime = "30M"
 
     [resources.permissions.main]
     url = "/"
+
+    [resources.permissions.confirmation]
+    url = "/confirm"
+    allowed = "visitors"
+    show_tile = false
+    auth_header = false
+
+    [resources.apt]
+    packages = ["poppler-utils", "python3-dkim", "python3-dnspython", "ldap-utils"]

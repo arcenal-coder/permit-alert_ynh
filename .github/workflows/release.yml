@@ -19,11 +19,15 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - run: python3 -m pip install dkimpy dnspython
       - run: cargo fmt --check --manifest-path app/Cargo.toml
       - run: cargo clippy --manifest-path app/Cargo.toml -- -D warnings
-      - run: cargo test --manifest-path app/Cargo.toml
+      - run: cargo test --manifest-path app/Cargo.toml -- --include-ignored
+      - run: python3 tests/test_mailbox.py
       - run: python3 tests/test_package.py
       - run: scripts/build-release
+      - run: PERMIT_ALERT_TEST_BINARY=app/target/release/permit-alert python3 tests/test_http.py
       - name: Test binary on Debian 12
         run: |
           docker run --detach --name permit-alert-smoke \
