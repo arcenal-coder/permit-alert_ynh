@@ -18,7 +18,8 @@ EnvironmentFile=-__INSTALL_DIR__/mail.env
 ExecStart=__INSTALL_DIR__/bin/permit-alert
 Restart=on-failure
 RestartSec=5
-NoNewPrivileges=true
+# Local sendmail invokes the setgid postdrop helper. Do not block that helper;
+# only its submission queue is writable in addition to application data/cache.
 PrivateTmp=true
 RuntimeDirectory=__APP__
 RuntimeDirectoryMode=0700
@@ -27,6 +28,7 @@ CacheDirectoryMode=0700
 UMask=0077
 ProtectSystem=strict
 ReadWritePaths=__DATA_DIR__
+ReadWritePaths=-/var/spool/postfix/maildrop -/var/spool/postfix/public
 
 [Install]
 WantedBy=multi-user.target

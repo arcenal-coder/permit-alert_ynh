@@ -3,7 +3,7 @@ id = "permit-alert"
 name = "Permit Alert"
 description.en = "Track E-Permit expiry dates."
 description.fr = "Suivi des echeances de permis E-Permit."
-version = "0.2.1~ynh1"
+version = "0.2.1~ynh2"
 maintainers = ["arcenal-coder"]
 
 [upstream]
@@ -34,8 +34,8 @@ ram.runtime = "128M"
 
 [resources]
     [resources.sources.main]
-    url = "https://github.com/arcenal-coder/permit-alert_ynh/releases/download/v0.1.1/permit-alert-0.1.1.ynh1-amd64.tar.gz"
-    sha256 = "1bbdb75ff229a85a9e862eb2e146e8d3a14050f1d075dfa707aaf69779096c8f"
+    url = "https://github.com/arcenal-coder/permit-alert_ynh/releases/download/v0.2.1/permit-alert-0.2.1.ynh1-amd64.tar.gz"
+    sha256 = "936a1f3750852ee77a834ee8f606f75c0ac3ac885f7bdbce13c6505f8f7f498e"
 
     [resources.system_user]
     allow_email = true

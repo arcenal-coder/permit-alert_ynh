@@ -1,4 +1,4 @@
-# Rapport de validation — candidate applicative 0.2.0
+# Rapport de validation — candidate applicative 0.2.1
 
 ## RÉUSSI — contrôles locaux
 
@@ -26,6 +26,14 @@ Les tests DKIM ne dépendent pas du DNS de production.
 
 La capture client montre le socle 0.1.x accessible sur YunoHost. Cela prouve
 le démarrage de cette ancienne version, pas la recette de la version 0.2.
+
+## RÉUSSI — CI Linux 0.2.1
+
+- https://github.com/arcenal-coder/permit-alert_ynh/actions/runs/38861924365
+- 12 tests Rust (dont extraction réelle), 5 tests e-mail dont DKIM réel,
+  2 tests de paquet et 1 parcours HTTP bout en bout : 20 tests réussis.
+- Compilation du binaire Linux et démarrage/réponses HTTP dans Debian 12.
+- Archive publiée : release `v0.2.1`, référencée par le paquet `0.2.1~ynh2`.
 
 ## NON_EXÉCUTÉ — recette serveur
 

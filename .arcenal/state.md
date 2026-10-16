@@ -4,7 +4,7 @@ Statut : ACTUEL
 
 ## Lot actif
 
-- Candidate applicative 0.2.0 : fonctions métier développées ; recette client à effectuer.
+- Candidate applicative 0.2.1 : fonctions métier développées ; recette client à effectuer.
 
 ## Dernière étape validée
 
@@ -25,6 +25,7 @@ Statut : ACTUEL
 - Parcours HTTP réel : import, correction, validation, redémarrage, annulation.
 - Snapshot SQLite WAL sans brouillons ni PDF.
 - Rejets e-mail et vérifications DKIM cryptographiques avec DNS simulé.
+- CI v0.2.1 réussie : 20 tests, compilation Linux et démarrage dans Debian 12.
 - Voir TEST_REPORT.md pour les preuves et la recette non exécutée.
 
 ## Résultats
@@ -46,4 +47,4 @@ Statut : ACTUEL
 
 ## Prochaine action
 
-- Produire la release 0.2.0, puis mettre à jour l'installation client et réaliser la recette documentée.
+- Mettre à jour l'installation client vers 0.2.1~ynh2 et réaliser la recette documentée (PDF réel, messagerie, permissions et sauvegarde).
