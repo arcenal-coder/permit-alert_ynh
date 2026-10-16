@@ -2,3 +2,6 @@
 /bin/
 /dist/
 __pycache__/
+mail.env
+**/private/
+*.sqlite3*

@@ -89,6 +89,22 @@ class HttpAcceptance(unittest.TestCase):
             try:
                 html = urllib.request.urlopen(base + "/imports").read().decode()
                 csrf = Fields(html).values["csrf"]
+                connector_page = urllib.request.urlopen(base + "/connectors").read().decode()
+                connector_fields = {"csrf": Fields(connector_page).values["csrf"], "revision": "initial",
+                                    "outgoing_mode": "smtp", "sender": "notifications@example.org",
+                                    "smtp_host": "smtp.example.org", "smtp_port": "587", "smtp_tls": "starttls",
+                                    "smtp_username": "sender@example.org", "smtp_password": "SMTP_PRIVATE_TEST_VALUE",
+                                    "imap_host": "imap.example.org", "imap_port": "993", "imap_username": "inbox@example.org",
+                                    "imap_password": "IMAP_PRIVATE_TEST_VALUE", "imap_folder": "INBOX",
+                                    "ldap_url": "ldap://127.0.0.1", "ldap_users_base": "ou=users,dc=yunohost,dc=org",
+                                    "ldap_groups_base": "ou=groups,dc=yunohost,dc=org", "ldap_group": "coordinateurs",
+                                    "ldap_bind_dn": "", "ldap_password": ""}
+                configured = urllib.request.urlopen(base + "/connectors", data=urllib.parse.urlencode(connector_fields).encode()).read().decode()
+                self.assertNotIn("IMAP_PRIVATE_TEST_VALUE", configured)
+                self.assertNotIn("SMTP_PRIVATE_TEST_VALUE", configured)
+                private_file = Path(directory) / "private/connectors.json"
+                self.assertEqual(private_file.stat().st_mode & 0o777, 0o600)
+                self.assertFalse(json.loads(private_file.read_text())["imap"]["enabled"])
                 boundary = "permit-alert-test-boundary"
                 body = (f"--{boundary}\r\nContent-Disposition: form-data; name=\"csrf\"\r\n\r\n{csrf}\r\n"
                         f"--{boundary}\r\nContent-Disposition: form-data; name=\"pdf\"; filename=\"permit.pdf\"\r\nContent-Type: application/pdf\r\n\r\n").encode() + pdf() + f"\r\n--{boundary}--\r\n".encode()
@@ -124,6 +140,10 @@ class HttpAcceptance(unittest.TestCase):
                 process.stderr.close()
                 process = start()
                 self.assertIn("HTTP-1", urllib.request.urlopen(base + "/").read().decode())
+                reloaded = urllib.request.urlopen(base + "/connectors").read().decode()
+                self.assertIn("smtp.example.org", reloaded)
+                self.assertNotIn("IMAP_PRIVATE_TEST_VALUE", reloaded)
+                self.assertNotIn("SMTP_PRIVATE_TEST_VALUE", reloaded)
                 resumed = urllib.request.urlopen(pending_url).read().decode()
                 self.assertIn("Fiche existante", resumed)
                 self.assertTrue(urllib.request.urlopen(pending_url + "/pdf").read().startswith(b"%PDF-"))

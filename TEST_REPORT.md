@@ -1,4 +1,32 @@
-# Rapport de validation — candidate applicative 0.2.1
+# Rapport de validation — candidate locale 0.3.0
+
+## RÉUSSI — préparation des connecteurs 0.3
+
+- 16 tests Rust, 6 tests de connecteurs Python, 6 tests d'import e-mail/DKIM,
+  2 tests de paquet et 1 parcours HTTP réel : **31 tests réussis**.
+- Conservation des secrets à champ vide, effacement explicite et absence de
+  réutilisation sur un autre serveur/compte ; HTML et journal sans secret.
+- Fichier privé `0600`, répertoire `0700`, enregistrement atomique et contrôle
+  de révision contre les écrasements concurrents.
+- Refus CSRF, refus d'activation incomplète et refus des transports non sécurisés.
+- Envoi SMTP via la configuration enregistrée, transmise au helper par stdin
+  sans secret dans argv ; pas de redémarrage nécessaire.
+- Tests SMTP simulés : TLS et authentification, aucune commande DATA ni envoi
+  lors d'un diagnostic, erreurs serveur remplacées par un message non sensible.
+- Tests IMAP simulés : ouverture du dossier en lecture seule, aucun FETCH,
+  STORE ou EXPUNGE lors d'un diagnostic.
+- Test LDAP : mot de passe dans un fichier temporaire `0600`, supprimé après
+  utilisation ; connexion TLS vérifiée et absence de secret dans argv.
+- Parcours HTTP réel : enregistrement des connecteurs désactivés avec valeurs
+  de test, conservation après redémarrage, champs secrets toujours masqués.
+- Clippy strict, formatage et syntaxe Bash réussis.
+
+La candidate 0.3 n'est pas publiée. Ses connexions réseau sont testées par
+simulation ; le paramétrage et les diagnostics réels sont prévus in situ.
+La dernière release publiée reste `v0.2.1-ynh2`. Les preuves CI ci-dessous sont
+celles de cette version antérieure, pas une validation Linux de la candidate 0.3.
+
+## Historique de validation applicative 0.2.1
 
 ## RÉUSSI — contrôles locaux
 

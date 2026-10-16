@@ -2,12 +2,14 @@ import base64
 import importlib.util
 import unittest
 import subprocess
+import sys
 from types import SimpleNamespace
 from email.message import EmailMessage
 from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
 spec = importlib.util.spec_from_file_location("mailbox_worker", ROOT / "scripts/mailbox.py")
 worker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(worker)
@@ -52,6 +54,11 @@ class MailboxTests(unittest.TestCase):
     def test_ldif_and_ldap_injection(self):
         self.assertEqual(worker.ldif_values("memberUid: alice\nmemberUid:: Ym9i\n", "memberUid"), ["alice", "bob"])
         self.assertEqual(worker.ldap_escape("a*)(uid=*)"), r"a\2a\29\28uid=\2a\29")
+
+    @patch.object(worker, "ldap_search", return_value="")
+    def test_missing_group_is_a_configuration_failure_not_a_message_rejection(self, search):
+        with self.assertRaises(RuntimeError):
+            worker.authorized_sender("coordinateur@example.org", {"group": "absent", "groups_base": "ou=groups,dc=example", "users_base": "ou=users,dc=example"})
 
 
 @unittest.skipUnless(importlib.util.find_spec("dkim"), "requires dkimpy and dnspython")

@@ -3,6 +3,9 @@
 source /usr/share/yunohost/helpers
 
 ynh_backup "$install_dir"
+if [ -d "$data_dir/private" ]; then
+    ynh_backup "$data_dir/private"
+fi
 # Make a consistent snapshot even while the service is running. Only the
 # database is copied: future temporary PDFs must never enter an archive.
 mkdir -p ".${data_dir}"

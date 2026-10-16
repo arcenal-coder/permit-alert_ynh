@@ -31,7 +31,7 @@ impl IntoResponse for Error {
         (self.0, Html(format!("<!doctype html><html lang=fr><meta charset=utf-8><title>Erreur — Permit Alert</title><h1>Opération non effectuée</h1><p>{}</p><p>Revenez à la page précédente pour corriger ou réessayer.</p></html>", e(&self.1)))).into_response()
     }
 }
-fn invalid(message: impl Into<String>) -> Error {
+pub(crate) fn invalid(message: impl Into<String>) -> Error {
     Error(StatusCode::BAD_REQUEST, message.into())
 }
 fn not_found() -> Error {
@@ -51,7 +51,7 @@ pub fn e(value: &str) -> String {
 fn value<'a>(data: &'a FormData, key: &str) -> &'a str {
     data.get(key).map(|v| v.trim()).unwrap_or("")
 }
-fn csrf(app: &App, data: &FormData) -> Result<()> {
+pub(crate) fn csrf(app: &App, data: &FormData) -> Result<()> {
     if value(data, "csrf") != app.0.csrf {
         return Err(Error(
             StatusCode::FORBIDDEN,
@@ -60,10 +60,10 @@ fn csrf(app: &App, data: &FormData) -> Result<()> {
     }
     Ok(())
 }
-fn token(app: &App) -> String {
+pub(crate) fn token(app: &App) -> String {
     format!("<input type=hidden name=csrf value=\"{}\">", app.0.csrf)
 }
-fn field(name: &str, label: &str, value: &str, kind: &str, required: bool) -> String {
+pub(crate) fn field(name: &str, label: &str, value: &str, kind: &str, required: bool) -> String {
     format!(
         "<label>{}<input type=\"{}\" name=\"{}\" value=\"{}\" {}></label>",
         e(label),
@@ -73,15 +73,16 @@ fn field(name: &str, label: &str, value: &str, kind: &str, required: bool) -> St
         if required { "required" } else { "" }
     )
 }
-fn page(app: &App, title: &str, content: String) -> Html<String> {
+pub(crate) fn page(app: &App, title: &str, content: String) -> Html<String> {
     Html(format!(
-        "<!doctype html><html lang=fr><head><meta charset=utf-8><meta name=viewport content=\"width=device-width,initial-scale=1\"><title>{} — Permit Alert</title><link rel=stylesheet href=\"{}\"></head><body><header><a class=brand href=\"{}\">Permit<span>Alert</span></a><nav><a href=\"{}\">Permis</a><a href=\"{}\">Imports à valider</a><a href=\"{}\">Réglages</a><a href=\"{}\">Journal</a></nav><small>v{}</small></header><main><div class=heading><div><p class=eyebrow>SUIVI DES ÉCHÉANCES · E-PERMIT</p><h1>{}</h1></div><a class=button href=\"{}\">Importer un PDF</a></div>{}</main><footer>Accès coordinateurs · Les PDF sont temporaires et exclus des sauvegardes.</footer></body></html>",
+        "<!doctype html><html lang=fr><head><meta charset=utf-8><meta name=viewport content=\"width=device-width,initial-scale=1\"><title>{} — Permit Alert</title><link rel=stylesheet href=\"{}\"></head><body><header><a class=brand href=\"{}\">Permit<span>Alert</span></a><nav><a href=\"{}\">Permis</a><a href=\"{}\">Imports à valider</a><a href=\"{}\">Réglages</a><a href=\"{}\">Connecteurs</a><a href=\"{}\">Journal</a></nav><small>v{}</small></header><main><div class=heading><div><p class=eyebrow>SUIVI DES ÉCHÉANCES · E-PERMIT</p><h1>{}</h1></div><a class=button href=\"{}\">Importer un PDF</a></div>{}</main><footer>Accès coordinateurs · Les PDF sont temporaires et exclus des sauvegardes.</footer></body></html>",
         e(title),
         app.url("/style.css"),
         app.url("/"),
         app.url("/"),
         app.url("/imports"),
         app.url("/settings"),
+        app.url("/connectors"),
         app.url("/journal"),
         env!("CARGO_PKG_VERSION"),
         e(title),
@@ -103,6 +104,8 @@ pub fn router(app: App) -> Router {
         .route("/imports/{id}/validate", post(validate))
         .route("/imports/{id}/cancel", post(cancel))
         .route("/settings", get(settings).post(save_settings))
+        .route("/connectors", get(crate::connector_web::index).post(crate::connector_web::save))
+        .route("/connectors/test/{kind}", post(crate::connector_web::test))
         .route("/recipients", post(add_recipient))
         .route("/recipients/{id}/delete", post(delete_recipient))
         .route("/recipients/{id}/resend", post(resend_recipient))
@@ -577,7 +580,7 @@ async fn settings(State(app): State<App>) -> Result<Html<String>> {
         body.push_str(&format!("<form method=post action=\"{}\">{}<button class=danger>Retirer</button></form></div></article>",app.url(&format!("/recipients/{id}/delete")),token(&app)));
     }
     body.push_str("</section><section class=panel><h2>Messagerie et intégration</h2>");
-    body.push_str(&format!("<p>Expéditeur des notifications : <strong>{}</strong></p><p>URL des confirmations : {}</p><p>Réception IMAP : <strong>{}</strong>. Les paramètres secrets sont définis dans le fichier privé du service, jamais affichés ici.</p><p>Les échecs d’envoi et de relève sont visibles dans le journal.</p></section>",e(&app.0.sender),e(&app.0.public_url),if std::env::var("PERMIT_ALERT_IMAP_HOST").is_ok(){"configurée"}else{"non configurée"}));
+    body.push_str(&format!("<p>URL des confirmations : {}</p><p><a class=button href=\"{}\">Configurer et tester les connecteurs</a></p><p>Envoi local ou SMTP TLS, réception IMAP TLS et annuaire LDAP. Les secrets sont enregistrés dans un fichier privé sur ce serveur, jamais affichés ici.</p><p>Les échecs d’envoi et de relève sont visibles dans le journal.</p></section>",e(&app.0.public_url),app.url("/connectors")));
     Ok(page(&app, "Réglages et destinataires", body))
 }
 

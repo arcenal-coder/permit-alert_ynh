@@ -1,4 +1,4 @@
-use crate::{App, db, model::due, web};
+use crate::{App, connectors, db, model::due, web};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use chrono::{Local, Utc};
 use rusqlite::{OptionalExtension, params};
@@ -7,10 +7,12 @@ use std::{env, process::Stdio, time::Duration};
 use tokio::{io::AsyncWriteExt, process::Command};
 
 pub async fn send(app: &App, recipient: &str, subject: &str, body: &str) -> Result<(), String> {
-    if !web::valid_email(recipient)
-        || !web::valid_email(&app.0.sender)
-        || subject.contains(['\r', '\n'])
-    {
+    let config = connectors::load(app)?;
+    if !config.outgoing.enabled {
+        return Err("Le connecteur d’envoi est désactivé.".into());
+    }
+    let sender = &config.outgoing.sender;
+    if !web::valid_email(recipient) || !web::valid_email(sender) || subject.contains(['\r', '\n']) {
         return Err("Adresse ou en-tête de notification invalide.".into());
     }
     let encoded = STANDARD.encode(body.as_bytes());
@@ -22,14 +24,27 @@ pub async fn send(app: &App, recipient: &str, subject: &str, body: &str) -> Resu
         .join("\r\n");
     let message = format!(
         "From: {}\r\nTo: {}\r\nSubject: =?UTF-8?B?{}?=\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n{}\r\n",
-        app.0.sender,
+        sender,
         recipient,
         STANDARD.encode(subject),
         wrapped
     );
+    if config.outgoing.mode == "smtp" {
+        let result = connectors::helper(
+            app,
+            "send-smtp",
+            serde_json::json!({"config":config,"recipient":recipient,"message":message}),
+        )
+        .await?;
+        return if result.ok {
+            Ok(())
+        } else {
+            Err(result.message)
+        };
+    }
     let result = tokio::time::timeout(Duration::from_secs(20), async {
         let mut child = Command::new(&app.0.sendmail)
-            .args(["-i", "-t", "-f", &app.0.sender])
+            .args(["-i", "-t", "-f", sender])
             .stdin(Stdio::piped())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
@@ -63,6 +78,9 @@ pub async fn send(app: &App, recipient: &str, subject: &str, body: &str) -> Resu
 }
 
 pub async fn alert_tick(app: &App) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    if !connectors::load(app)?.outgoing.enabled {
+        return Ok(());
+    }
     let db = app.db()?;
     if db::setting(&db, "configured", "0") != "1" {
         return Ok(());
@@ -161,23 +179,38 @@ struct Incoming {
     pdf: Option<String>,
 }
 
-async fn mailbox_command(action: &str, args: &[&str]) -> Result<Vec<u8>, String> {
+async fn mailbox_command(
+    config: &connectors::Connectors,
+    action: &str,
+    args: &[&str],
+) -> Result<Vec<u8>, String> {
     let script =
         env::var("PERMIT_ALERT_MAILBOX_SCRIPT").map_err(|_| "Script de relève non configuré.")?;
-    let output = tokio::time::timeout(
-        Duration::from_secs(60),
-        Command::new("python3")
+    let output = tokio::time::timeout(Duration::from_secs(60), async {
+        let mut child = Command::new("python3")
             .arg(script)
             .arg(action)
             .args(args)
+            .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
             .kill_on_drop(true)
-            .output(),
-    )
+            .spawn()
+            .map_err(|_| "Impossible de lancer la relève IMAP.")?;
+        let mut stdin = child.stdin.take().ok_or("Connecteur IMAP indisponible.")?;
+        stdin
+            .write_all(&serde_json::to_vec(config).map_err(|_| "Configuration IMAP invalide.")?)
+            .await
+            .map_err(|_| "Transmission privée au connecteur impossible.")?;
+        drop(stdin);
+        child
+            .wait_with_output()
+            .await
+            .map_err(|_| "Relève IMAP interrompue.")
+    })
     .await
     .map_err(|_| "Relève IMAP : délai dépassé.")?
-    .map_err(|_| "Impossible de lancer la relève IMAP.")?;
+    .map_err(str::to_owned)?;
     if !output.status.success() {
         return Err("Relève IMAP/LDAP/DKIM impossible : vérifiez le fichier privé de messagerie et les services réseau.".into());
     }
@@ -185,10 +218,11 @@ async fn mailbox_command(action: &str, args: &[&str]) -> Result<Vec<u8>, String>
 }
 
 async fn mailbox_tick(app: &App) -> Result<(), String> {
-    if env::var("PERMIT_ALERT_IMAP_HOST").is_err() {
+    let config = connectors::load(app)?;
+    if !config.imap.enabled {
         return Ok(());
     }
-    let output = mailbox_command("fetch", &[]).await?;
+    let output = mailbox_command(&config, "fetch", &[]).await?;
     let incoming: Option<Incoming> =
         serde_json::from_slice(&output).map_err(|_| "Réponse de la relève invalide.")?;
     let Some(incoming) = incoming else {
@@ -248,7 +282,7 @@ async fn mailbox_tick(app: &App) -> Result<(), String> {
         }
     }
     // Only acknowledge after the result has been persisted; retry on restart.
-    mailbox_command("ack", &[&incoming.validity, &incoming.uid]).await?;
+    mailbox_command(&config, "ack", &[&incoming.validity, &incoming.uid]).await?;
     Ok(())
 }
 
@@ -257,8 +291,16 @@ pub async fn worker(app: App) {
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     let mut retry_alert = Utc::now();
     let mut last_mail_error = String::new();
+    let mut connector_revision = String::new();
     loop {
         interval.tick().await;
+        if let Ok(config) = connectors::load(&app)
+            && config.revision != connector_revision
+        {
+            connector_revision = config.revision;
+            retry_alert = Utc::now();
+            last_mail_error.clear();
+        }
         if let Err(error) = crate::cleanup(&app) {
             eprintln!("Maintenance failed: {error}");
         }

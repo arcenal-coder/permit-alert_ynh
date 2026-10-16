@@ -1,3 +1,5 @@
+mod connector_web;
+mod connectors;
 mod db;
 mod mail;
 mod model;
@@ -24,6 +26,9 @@ pub struct Config {
     base_path: String,
     sender: String,
     sendmail: PathBuf,
+    connector_file: PathBuf,
+    connector_script: PathBuf,
+    connector_lock: std::sync::Mutex<()>,
 }
 
 impl App {
@@ -61,7 +66,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all(&temporary)?;
     use std::os::unix::fs::PermissionsExt;
     std::fs::set_permissions(&temporary, std::fs::Permissions::from_mode(0o700))?;
+    let connector_file = database
+        .parent()
+        .unwrap_or_else(|| Path::new("."))
+        .join("private/connectors.json");
     let app = App(Arc::new(Config {
+        connector_file,
+        connector_script: env::var("PERMIT_ALERT_CONNECTOR_SCRIPT")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| PathBuf::from("scripts/connectors.py")),
+        connector_lock: std::sync::Mutex::new(()),
         database,
         temporary,
         _temporary_owner: None,

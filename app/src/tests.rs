@@ -24,6 +24,12 @@ fn app() -> App {
     .unwrap();
     std::fs::set_permissions(&sendmail, std::fs::Permissions::from_mode(0o700)).unwrap();
     App(Arc::new(Config {
+        connector_file: temporary.path().join("private/connectors.json"),
+        connector_script: std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .join("scripts/connectors.py"),
+        connector_lock: std::sync::Mutex::new(()),
         database,
         temporary: temporary.path().to_path_buf(),
         _temporary_owner: Some(temporary),
@@ -65,6 +71,266 @@ fn form(values: &[(String, String)]) -> String {
         .map(|(k, v)| format!("{}={}", encode(k), encode(v)))
         .collect::<Vec<_>>()
         .join("&")
+}
+
+fn connector_form(config: &crate::connectors::Connectors) -> Vec<(String, String)> {
+    let mut values = vec![
+        ("csrf".into(), "test-csrf".into()),
+        ("revision".into(), config.revision.clone()),
+    ];
+    for (key, value) in [
+        ("outgoing_mode", &config.outgoing.mode),
+        ("sender", &config.outgoing.sender),
+        ("smtp_host", &config.outgoing.host),
+        ("smtp_tls", &config.outgoing.tls),
+        ("smtp_username", &config.outgoing.username),
+        ("imap_host", &config.imap.host),
+        ("imap_username", &config.imap.username),
+        ("imap_folder", &config.imap.folder),
+        ("ldap_url", &config.ldap.url),
+        ("ldap_users_base", &config.ldap.users_base),
+        ("ldap_groups_base", &config.ldap.groups_base),
+        ("ldap_group", &config.ldap.group),
+        ("ldap_bind_dn", &config.ldap.bind_dn),
+    ] {
+        values.push((key.into(), value.clone()));
+    }
+    values.push(("smtp_port".into(), config.outgoing.port.to_string()));
+    values.push(("imap_port".into(), config.imap.port.to_string()));
+    for key in ["smtp_password", "imap_password", "ldap_password"] {
+        values.push((key.into(), String::new()));
+    }
+    if config.outgoing.enabled {
+        values.push(("outgoing_enabled".into(), "yes".into()));
+    }
+    if config.imap.enabled {
+        values.push(("imap_enabled".into(), "yes".into()));
+    }
+    values
+}
+
+#[tokio::test]
+async fn connector_secrets_are_private_preserved_and_never_reflected() {
+    let app = app();
+    let mut config = crate::connectors::load(&app).unwrap();
+    assert!(!app.0.connector_file.exists());
+    config.imap.enabled = false;
+    config.imap.host = "imap.example.org".into();
+    config.imap.username = "inbox@example.org".into();
+    config.imap.password = "IMAP_PRIVATE_TEST_VALUE".into();
+    config.outgoing.enabled = false;
+    config.outgoing.mode = "smtp".into();
+    config.outgoing.host = "smtp.example.org".into();
+    config.outgoing.username = "sender@example.org".into();
+    config.outgoing.password = "SMTP_PRIVATE_TEST_VALUE".into();
+    config.ldap.bind_dn = "uid=service,dc=example,dc=org".into();
+    config.ldap.bind_password = "LDAP_PRIVATE_TEST_VALUE".into();
+    crate::connectors::save(&app, config, "initial").unwrap();
+    assert_eq!(
+        std::fs::metadata(&app.0.connector_file)
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o777,
+        0o600
+    );
+    assert_eq!(
+        std::fs::metadata(app.0.connector_file.parent().unwrap())
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o777,
+        0o700
+    );
+    let config = crate::connectors::load(&app).unwrap();
+    let (_, html) = request(&app, "GET", "/connectors", String::new()).await;
+    assert!(html.contains("type=password"));
+    for secret in [
+        &config.imap.password,
+        &config.outgoing.password,
+        &config.ldap.bind_password,
+    ] {
+        assert!(!html.contains(secret));
+    }
+    assert_eq!(
+        request(&app, "POST", "/connectors", form(&connector_form(&config)))
+            .await
+            .0,
+        StatusCode::SEE_OTHER
+    );
+    let saved = crate::connectors::load(&app).unwrap();
+    assert_eq!(saved.imap.password, config.imap.password);
+    assert_eq!(saved.outgoing.password, config.outgoing.password);
+    assert_eq!(saved.ldap.bind_password, config.ldap.bind_password);
+    assert!(
+        request(&app, "POST", "/connectors", form(&connector_form(&config)))
+            .await
+            .1
+            .contains("modifiés")
+    );
+    let settings: String = app
+        .db()
+        .unwrap()
+        .query_row("SELECT group_concat(value) FROM settings", [], |r| r.get(0))
+        .unwrap();
+    assert!(!settings.contains("PRIVATE_TEST_VALUE"));
+    let mut changed = saved.clone();
+    changed.imap.host = "other.example.org".into();
+    assert_eq!(
+        request(&app, "POST", "/connectors", form(&connector_form(&changed)))
+            .await
+            .0,
+        StatusCode::SEE_OTHER
+    );
+    let saved = crate::connectors::load(&app).unwrap();
+    assert!(saved.imap.password.is_empty());
+    assert_eq!(saved.outgoing.password, config.outgoing.password);
+    let mut values = connector_form(&saved);
+    values.push(("clear_smtp_password".into(), "yes".into()));
+    assert_eq!(
+        request(&app, "POST", "/connectors", form(&values)).await.0,
+        StatusCode::SEE_OTHER
+    );
+    assert!(
+        crate::connectors::load(&app)
+            .unwrap()
+            .outgoing
+            .password
+            .is_empty()
+    );
+    let (_, journal) = request(&app, "GET", "/journal", String::new()).await;
+    assert!(!journal.contains("PRIVATE_TEST_VALUE"));
+}
+
+#[tokio::test]
+async fn connector_csrf_and_invalid_activation_do_not_change_configuration() {
+    let app = app();
+    let mut config = crate::connectors::load(&app).unwrap();
+    let mut values = connector_form(&config);
+    values.retain(|(key, _)| key != "csrf");
+    assert_eq!(
+        request(&app, "POST", "/connectors", form(&values)).await.0,
+        StatusCode::FORBIDDEN
+    );
+    assert!(!app.0.connector_file.exists());
+    config.imap.enabled = true;
+    assert_eq!(
+        request(&app, "POST", "/connectors", form(&connector_form(&config)))
+            .await
+            .0,
+        StatusCode::BAD_REQUEST
+    );
+    assert!(!app.0.connector_file.exists());
+    config.imap.enabled = false;
+    config.ldap.url = "ldap://remote.example.org".into();
+    assert!(config.validate().is_err());
+    config.ldap.url = "ldaps://remote.example.org".into();
+    assert!(config.validate().is_ok());
+    config.ldap.url = "ldaps://user:secret@remote.example.org".into();
+    assert!(config.validate().is_err());
+    config.ldap.url = "ldap://127.0.0.1".into();
+    config.outgoing.mode = "smtp".into();
+    config.outgoing.host = "smtp.example.org".into();
+    config.outgoing.tls = "none".into();
+    assert!(config.validate().is_err());
+}
+
+#[tokio::test]
+async fn connector_diagnostic_checks_revision_without_sending() {
+    let app = app();
+    assert_eq!(
+        request(
+            &app,
+            "POST",
+            "/connectors/test/sendmail",
+            "revision=initial".into()
+        )
+        .await
+        .0,
+        StatusCode::FORBIDDEN
+    );
+    assert_eq!(
+        request(&app, "GET", "/connectors/test/sendmail", String::new())
+            .await
+            .0,
+        StatusCode::METHOD_NOT_ALLOWED
+    );
+    let (status, html) = request(
+        &app,
+        "POST",
+        "/connectors/test/sendmail",
+        "csrf=test-csrf&revision=initial".into(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(html.contains("Programme d’envoi local présent"));
+    assert!(!app.0.temporary.join("sent.mail").exists());
+    assert!(!app.0.connector_file.exists());
+    std::fs::remove_file(&app.0.sendmail).unwrap();
+    let (_, failure) = request(
+        &app,
+        "POST",
+        "/connectors/test/sendmail",
+        "csrf=test-csrf&revision=initial".into(),
+    )
+    .await;
+    assert!(failure.contains("diagnostic-error"));
+    let mut config = crate::connectors::load(&app).unwrap();
+    config.imap.enabled = false;
+    crate::connectors::save(&app, config, "initial").unwrap();
+    assert_eq!(
+        request(
+            &app,
+            "POST",
+            "/connectors/test/sendmail",
+            "csrf=test-csrf&revision=initial".into()
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
+}
+
+#[tokio::test]
+async fn saved_smtp_configuration_is_used_without_restart() {
+    let mut app = app();
+    let capture = app.0.temporary.join("smtp-capture.json");
+    let script = app.0.temporary.join("smtp-helper.py");
+    std::fs::write(&script,format!("import sys,json\np=json.load(sys.stdin)\njson.dump({{'recipient':p['recipient'],'message':p['message'],'password':p['config']['outgoing']['password'],'args':sys.argv[1:]}},open({:?},'w'))\nprint(json.dumps({{'ok':True,'message':'accepted'}}))\n",capture.to_str().unwrap())).unwrap();
+    Arc::get_mut(&mut app.0).unwrap().connector_script = script;
+    let mut config = crate::connectors::load(&app).unwrap();
+    config.imap.enabled = false;
+    config.outgoing.mode = "smtp".into();
+    config.outgoing.sender = "notifications@example.org".into();
+    config.outgoing.host = "smtp.example.org".into();
+    config.outgoing.username = "sender@example.org".into();
+    config.outgoing.password = "SMTP_PRIVATE_TEST_VALUE".into();
+    crate::connectors::save(&app, config, "initial").unwrap();
+    mail::send(&app, "recipient@example.org", "Test", "Body")
+        .await
+        .unwrap();
+    let payload: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&capture).unwrap()).unwrap();
+    assert_eq!(payload["password"], "SMTP_PRIVATE_TEST_VALUE");
+    assert_eq!(payload["args"], serde_json::json!(["send-smtp"]));
+    assert!(
+        payload["message"]
+            .as_str()
+            .unwrap()
+            .contains("From: notifications@example.org")
+    );
+    assert!(!app.0.temporary.join("sent.mail").exists());
+    let mut config = crate::connectors::load(&app).unwrap();
+    let revision = config.revision.clone();
+    config.outgoing.enabled = false;
+    crate::connectors::save(&app, config, &revision).unwrap();
+    std::fs::remove_file(&capture).unwrap();
+    assert!(
+        mail::send(&app, "recipient@example.org", "Test", "Body")
+            .await
+            .is_err()
+    );
+    assert!(!capture.exists());
 }
 async fn request(app: &App, method: &str, path: &str, body: String) -> (StatusCode, String) {
     let response = web::router(app.clone())

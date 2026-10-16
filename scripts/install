@@ -7,6 +7,8 @@ if [ -f "$YNH_APP_BASEDIR/bin/VERSION" ]; then
     install -D -m 0755 "$YNH_APP_BASEDIR/bin/permit-alert" "$install_dir/bin/permit-alert"
     install -D -m 0644 "$YNH_APP_BASEDIR/bin/VERSION" "$install_dir/bin/VERSION"
     install -D -m 0644 "$YNH_APP_BASEDIR/scripts/mailbox.py" "$install_dir/scripts/mailbox.py"
+    install -D -m 0644 "$YNH_APP_BASEDIR/scripts/connectors.py" "$install_dir/scripts/connectors.py"
+    install -D -m 0644 "$YNH_APP_BASEDIR/scripts/connector_io.py" "$install_dir/scripts/connector_io.py"
 else
     ynh_setup_source --dest_dir="$install_dir"
 fi

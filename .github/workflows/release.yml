@@ -25,6 +25,7 @@ jobs:
       - run: cargo clippy --manifest-path app/Cargo.toml -- -D warnings
       - run: cargo test --manifest-path app/Cargo.toml -- --include-ignored
       - run: python3 tests/test_mailbox.py
+      - run: python3 tests/test_connectors.py
       - run: python3 tests/test_package.py
       - run: scripts/build-release
       - run: PERMIT_ALERT_TEST_BINARY=app/target/release/permit-alert python3 tests/test_http.py

@@ -4,6 +4,11 @@ source /usr/share/yunohost/helpers
 
 ynh_restore_everything
 ynh_restore "$data_dir/permit-alert.sqlite3"
+if [ -f "$data_dir/private/connectors.json" ]; then
+    chmod 0700 "$data_dir/private"
+    chmod 0600 "$data_dir/private/connectors.json"
+    chown -R "$app:$app" "$data_dir/private"
+fi
 chmod 0755 "$install_dir/bin/permit-alert"
 ynh_config_add_systemd
 yunohost service add "$app" --description="Permit Alert"

@@ -6,15 +6,13 @@ Requires Debian python3-dkim, python3-dnspython and ldap-utils.
 import base64
 import email.policy
 import email.utils
-import imaplib
 import hashlib
 import json
 import os
 import re
-import ssl
-import subprocess
 import sys
 from email.parser import BytesParser
+from connector_io import imap_connection, ldap_search, ldap_escape
 
 MAX_MESSAGE = 16 * 1024 * 1024
 MAX_PDF = 10 * 1024 * 1024
@@ -32,28 +30,18 @@ def ldif_values(text, field):
     return values
 
 
-def ldap_escape(value):
-    return "".join("\\%02x" % ord(c) if c in "*()\\\0" else c for c in value)
-
-
-def ldap_search(base, query, *fields):
-    result = subprocess.run(
-        ["ldapsearch", "-LLL", "-x", "-H", "ldap://127.0.0.1", "-b", base,
-         "-o", "nettimeout=5", query, *fields],
-        check=True, capture_output=True, text=True, timeout=10,
-    )
-    return result.stdout
-
-
-def authorized_sender(sender):
-    group = os.environ.get("PERMIT_ALERT_LDAP_GROUP", "coordinateurs")
-    groups = ldap_search("ou=groups,dc=yunohost,dc=org", "(cn=" + ldap_escape(group) + ")", "memberUid", "member")
+def authorized_sender(sender, config=None):
+    config = config or {}
+    group = config.get("group", os.environ.get("PERMIT_ALERT_LDAP_GROUP", "coordinateurs"))
+    groups = ldap_search(config.get("groups_base", "ou=groups,dc=yunohost,dc=org"), "(cn=" + ldap_escape(group) + ")", "memberUid", "member", config=config)
+    if not ldif_values(groups, "dn"):
+        raise RuntimeError("Configured LDAP group missing")
     uids = set(ldif_values(groups, "memberUid"))
     for dn in ldif_values(groups, "member"):
-        match = re.match(r"uid=([^,]+),ou=users,dc=yunohost,dc=org$", dn, re.I)
+        match = re.match(r"uid=([^,]+)," + re.escape(config.get("users_base", "ou=users,dc=yunohost,dc=org")) + "$", dn, re.I)
         if match:
             uids.add(match[1])
-    users = ldap_search("ou=users,dc=yunohost,dc=org", "(mail=" + ldap_escape(sender) + ")", "uid")
+    users = ldap_search(config.get("users_base", "ou=users,dc=yunohost,dc=org"), "(mail=" + ldap_escape(sender) + ")", "uid", config=config)
     return bool(uids.intersection(ldif_values(users, "uid")))
 
 
@@ -85,7 +73,7 @@ def aligned_dkim(raw, message, sender):
     return False
 
 
-def inspect(raw):
+def inspect(raw, ldap=None):
     message = BytesParser(policy=email.policy.default).parsebytes(raw)
     from_headers = message.get_all("From", [])
     addresses = email.utils.getaddresses([str(h) for h in from_headers])
@@ -94,7 +82,7 @@ def inspect(raw):
     sender = addresses[0][1].lower()
     if len(sender) > 254 or not re.fullmatch(r"[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+", sender):
         return {"sender": "inconnu", "reason": "Adresse expéditeur invalide."}
-    if not authorized_sender(sender):
+    if not authorized_sender(sender, ldap):
         return {"sender": sender, "reason": "Expéditeur non membre du groupe coordinateurs LDAP."}
     if not aligned_dkim(raw, message, sender):
         return {"sender": sender, "reason": "Signature DKIM alignée sur le domaine expéditeur absente ou invalide."}
@@ -111,15 +99,10 @@ def inspect(raw):
 
 
 def main():
-    host = os.environ["PERMIT_ALERT_IMAP_HOST"]
-    with imaplib.IMAP4_SSL(host, int(os.environ.get("PERMIT_ALERT_IMAP_PORT", "993")),
-                          ssl_context=ssl.create_default_context(), timeout=20) as client:
-        client.login(os.environ["PERMIT_ALERT_IMAP_USER"], os.environ["PERMIT_ALERT_IMAP_PASSWORD"])
-        if b"UIDPLUS" not in client.capabilities:
-            raise RuntimeError("UIDPLUS required for selective permanent message removal")
-        status, _ = client.select(os.environ.get("PERMIT_ALERT_IMAP_FOLDER", "INBOX"))
-        if status != "OK":
-            raise RuntimeError("Mailbox unavailable")
+    config = json.load(sys.stdin)
+    imap = config["imap"]
+    host = imap["host"]
+    with imap_connection(imap) as client:
         validity = client.response("UIDVALIDITY")[1][0].decode()
         if sys.argv[1] == "ack":
             if validity != sys.argv[2] or not sys.argv[3].isdigit():
@@ -150,8 +133,8 @@ def main():
             if status != "OK":
                 raise RuntimeError("Fetch failed")
             raw = next(item[1] for item in content if isinstance(item, tuple))
-            event = inspect(raw)
-        identity = "\0".join([host, os.environ["PERMIT_ALERT_IMAP_USER"], os.environ.get("PERMIT_ALERT_IMAP_FOLDER", "INBOX")])
+            event = inspect(raw, config["ldap"])
+        identity = "\0".join([host, str(imap["port"]), imap["username"], imap.get("folder", "INBOX")])
         event.update(uid=uid, validity=validity, mailbox=hashlib.sha256(identity.encode()).hexdigest())
         print(json.dumps(event))
 

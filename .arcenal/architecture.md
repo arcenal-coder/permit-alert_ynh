@@ -17,10 +17,16 @@ Statut : VALIDE
 - Boucle Tokio chaque minute pour alertes, expiration et releve, sans cron concurrent.
 - Poppler pour l'extraction ; cache prive sous /var/cache/permit-alert hors sauvegardes.
 - IMAP TLS/UIDPLUS via helper Python ; LDAP local et verification DKIM alignee.
+- Candidate 0.3 : connecteurs configures via interface, fichier prive atomique
+  hors SQLite et helpers Python partages pour SMTP TLS, IMAP TLS et LDAP/LDAPS.
+- Diagnostics sans envoi ni traitement des messages ; secrets transmis aux
+  helpers par stdin, pas dans les arguments de commande.
 
 ## Cycle de vie
 
 - Le paquet sauvegarde SQLite et sa configuration privee, sans PDF.
+- Configuration web sous data_dir/private, sauvegardee separement de SQLite ;
+  droits 0700/0600 reappliques a la restauration.
 - La restauration restitue permis, reglages, destinataires et journaux.
 - Le service, les donnees et les permissions suivent les helpers YunoHost v2.
 
