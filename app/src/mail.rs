@@ -73,6 +73,7 @@ pub async fn alert_tick(app: &App) -> Result<(), Box<dyn std::error::Error + Sen
         .prepare("SELECT id,email FROM recipients WHERE confirmed_at IS NOT NULL ORDER BY id")?
         .query_map([], |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?)))?
         .collect::<Result<Vec<_>, _>>()?;
+    let mut had_errors = false;
     for (id, permit) in db::permits(&db)? {
         if !due(&permit.end_date, Local::now().date_naive(), lead) {
             continue;
@@ -137,10 +138,15 @@ pub async fn alert_tick(app: &App) -> Result<(), Box<dyn std::error::Error + Sen
                     )?;
                     // Don't retry every minute after a persistent mail failure.
                     // A global backoff still allows retries later in the hour.
-                    return Err(error.into());
+                    had_errors = true;
                 }
             }
         }
+    }
+    if had_errors {
+        return Err(
+            "Certaines notifications ont échoué ; les autres destinataires ont été traités.".into(),
+        );
     }
     Ok(())
 }

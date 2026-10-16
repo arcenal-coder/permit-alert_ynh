@@ -383,6 +383,26 @@ async fn older_journal_entries_and_expired_draft_are_accessible_and_cleaned() {
     );
 }
 
+#[tokio::test]
+async fn one_mail_failure_does_not_block_other_recipients() {
+    let app = app();
+    let db = app.db().unwrap();
+    db::upsert(&db, &permit()).unwrap();
+    db.execute("UPDATE settings SET value='1' WHERE key='configured'", [])
+        .unwrap();
+    db.execute("INSERT INTO recipients(email,confirmed_at) VALUES ('bad@example.org','2026'),('good@example.org','2026')",[]).unwrap();
+    std::fs::write(&app.0.sendmail,"#!/bin/sh\nmessage=$(cat)\ncase \"$message\" in *'To: bad@example.org'*) exit 1;; *) exit 0;; esac\n").unwrap();
+    assert!(mail::alert_tick(&app).await.is_err());
+    let email: String = db
+        .query_row(
+            "SELECT r.email FROM deliveries d JOIN recipients r ON r.id=d.recipient_id",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(email, "good@example.org");
+}
+
 #[test]
 fn migration_preserves_old_records_and_is_repeatable() {
     let dir = tempfile::tempdir().unwrap();
