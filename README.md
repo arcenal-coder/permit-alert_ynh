@@ -4,16 +4,15 @@ Application YunoHost de suivi des echeances de permis E-Permit.
 
 ## Etat actuel
 
-Candidate locale 0.3 : interface responsive en français, imports PDF avec
+Version applicative 0.3 : interface responsive en français, imports PDF avec
 correction et validation, mise à jour par numéro, filtres et suppression,
 rappels automatiques et destinataires confirmés, journal paginé sans purge.
 La relève e-mail est optionnelle et nécessite les identifiants de la boîte dédiée.
 Un écran **Connecteurs** prépare le paramétrage sur place : messagerie locale
 ou SMTP TLS, IMAP TLS et LDAP, avec stockage privé des secrets et diagnostics
 sans envoi ni traitement des messages. Aucun identifiant réel n'est fourni.
-La dernière release publiée reste `v0.2.1-ynh2` ; la candidate 0.3 nécessite
-sa propre compilation/release et la mise à jour des sources du manifeste avant
-publication. Le contrôle VERSION empêche d'installer un ancien binaire à sa place.
+Release publiée : `v0.3.0`. Le paquet `0.3.0~ynh2` référence son archive vérifiée.
+Le contrôle VERSION empêche d'installer un ancien binaire à sa place.
 
 Les tests utilisent des PDF synthétiques et une messagerie simulée. La recette
 avec un E-Permit réel et la vérification des intégrations sur le serveur client

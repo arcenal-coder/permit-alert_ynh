@@ -1,4 +1,4 @@
-# Rapport de validation — candidate locale 0.3.0
+# Rapport de validation — version 0.3.0
 
 ## RÉUSSI — préparation des connecteurs 0.3
 
@@ -21,10 +21,12 @@
   de test, conservation après redémarrage, champs secrets toujours masqués.
 - Clippy strict, formatage et syntaxe Bash réussis.
 
-La candidate 0.3 n'est pas publiée. Ses connexions réseau sont testées par
-simulation ; le paramétrage et les diagnostics réels sont prévus in situ.
-La dernière release publiée reste `v0.2.1-ynh2`. Les preuves CI ci-dessous sont
-celles de cette version antérieure, pas une validation Linux de la candidate 0.3.
+La version 0.3 est publiée sous `v0.3.0`, référencée par le paquet `0.3.0~ynh2`.
+Les 31 tests et le démarrage du binaire dans Debian 12 ont également réussi dans
+la CI : https://github.com/arcenal-coder/permit-alert_ynh/actions/runs/38885517993
+Les connexions réseau sont testées par simulation ; le paramétrage et les
+diagnostics réels sont prévus in situ. Les preuves CI ci-dessous concernent
+l'historique de validation de la version 0.2.1.
 
 ## Historique de validation applicative 0.2.1
 

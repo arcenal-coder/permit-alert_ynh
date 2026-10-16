@@ -4,7 +4,7 @@ Statut : ACTUEL
 
 ## Lot actif
 
-- Candidate locale 0.3.0 : connecteurs préparés pour paramétrage in situ ; non publiée.
+- Version 0.3.0 publiée : connecteurs préparés pour paramétrage in situ.
 
 ## Dernière étape validée
 
@@ -33,6 +33,8 @@ Statut : ACTUEL
 - Voir TEST_REPORT.md pour les preuves et la recette non exécutée.
 - Candidate 0.3 : 31 tests locaux réussis, Clippy strict, formatage, compilation
   et parcours HTTP avec rechargement des connecteurs après redémarrage.
+- CI v0.3.0 réussie : 31 tests, compilation Linux et démarrage dans Debian 12 ;
+  archive référencée par le paquet 0.3.0~ynh2.
 
 ## Résultats
 
@@ -57,5 +59,5 @@ Statut : ACTUEL
 
 ## Prochaine action
 
-- Produire une release 0.3 et mettre à jour l'URL/empreinte du manifeste avant
-  publication ; renseigner ensuite les connecteurs et réaliser les diagnostics in situ.
+- Mettre à jour le serveur vers 0.3.0~ynh2, renseigner les connecteurs et réaliser
+  les diagnostics et la recette fonctionnelle in situ.

@@ -1,4 +1,4 @@
-# Administration — Permit Alert 0.3 (candidate)
+# Administration — Permit Alert 0.3
 
 ## Utilisation
 
